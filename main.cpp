@@ -33,25 +33,16 @@ int main()
     spriteTree.setPosition(window.getSize().x / 2.0f, 0);
     /*spriteTree.setPosition(window.getSize().x / 2.0f - textureTree.getSize().x / 2.0f, 0);*/
 
-    /*sf::Sprite spriteCloud1;
-    spriteCloud1.setTexture(textureCloud);
-    sf::Sprite spriteCloud2;
-    spriteCloud2.setTexture(textureCloud);
-    spriteCloud2.setPosition(0, textureCloud.getSize().y);
-    sf::Sprite spriteCloud3;
-    spriteCloud3.setTexture(textureCloud);
-    spriteCloud3.setPosition(0, textureCloud.getSize().y * 2.0f);*/
-
     sf::Sprite spriteCloud[3];
     for (int i = 0; i < sizeof(spriteCloud) / sizeof(sf::Sprite); i++)
     {
         spriteCloud[i].setTexture(textureCloud);
-        spriteCloud[i].setPosition(0, textureCloud.getSize().y * i);
+        spriteCloud[i].setPosition(0, textureCloud.getSize().y * (i/2.0f));
     }
 
     sf::Sprite spriteBee;
     spriteBee.setTexture(textureBee);
-    spriteBee.setPosition(0, window.getSize().y * 3.0f / 4.0f);
+    spriteBee.setPosition(0, window.getSize().y * 2.0f / 4.0f);
 
     // sf::Vector2f velo = { 200.0f, 0.f };
     // 
@@ -61,13 +52,42 @@ int main()
     //
     // 두 가지 표현은 같은 표시 백터 : 좌표 <-> 방향과 크기
 
-    sf::Vector2f velo[sizeof(spriteCloud) / sizeof(sf::Sprite) + 1] = {  };
+    int spawnPadding = 200.f;
+    int deletePadding = 300.f;
+
+    sf::Vector2f direction[sizeof(spriteCloud) / sizeof(sf::Sprite) + 1] = {  };
+    float speed[sizeof(spriteCloud) / sizeof(sf::Sprite) + 1] = {  };
     for (int i = 0; i < sizeof(spriteCloud) / sizeof(sf::Sprite) + 1; i++)
     {
-        velo[i] = { ((rand() % 20) / 2.0f + 1) * 150.0f, 0.f };
+        float random = (float) rand() / RAND_MAX;
+        int dir;
+        if (random < 0.5f)
+        {
+            dir = 1;
+        }
+        else
+        {
+            dir = -1;
+        }
+        direction[i] = { 1.0f * dir ,0.0f };
+        if (i == 0)
+        {
+            spriteBee.setScale(-1.f * dir, 1.f);
+            spriteBee.setPosition(rand() % (window.getSize().x / 2) + (window.getSize().x / 4), spriteBee.getPosition().y);
+        }
+        else
+        {
+            spriteCloud[i - 1].setScale(-1.f * dir * (random + 0.7), 1.f * (random + 0.7));
+            spriteCloud[i - 1].setPosition(rand() % (window.getSize().x / 2) + (window.getSize().x / 4), spriteCloud[i - 1].getPosition().y);
+        }
+
+        direction[i] = { dir * 1.f, 0.f };
+        speed[i] = rand() % 300 + 150.f;
     }
 
     sf::Clock clock;
+    int rightTime = 0;
+    int angle = 0;
 
     while (window.isOpen())
     {   
@@ -83,23 +103,61 @@ int main()
         }
 
         // update area
-        sf::Vector2f posBee = spriteBee.getPosition();
-        if (posBee.x > window.getSize().x)
+        sf::Vector2f posBee = spriteBee.getPosition();        
+
+        direction[0].y = ((90 - angle % 180) / 90.f) * 3.f;
+        if (angle % 360 > 180)
         {
-            posBee.x = -1.0f * textureBee.getSize().x;
+            direction[0].y *= -1.f;
         }
-        posBee += velo[0] * deltaTime;
+        angle++;
+        
+        posBee += direction[0] * speed[0] * deltaTime;
         spriteBee.setPosition(posBee);
+
+        if (posBee.x < 0 - deletePadding || posBee.x > window.getSize().x + deletePadding)
+        {
+            float random = (float)rand() / RAND_MAX;
+            int dir;
+            if (random < 0.5f)
+            {
+                dir = 1;
+            }
+            else
+            {
+                dir = -1;
+            }
+            spriteBee.setScale(-1.f * dir, 1.f);
+            spriteBee.setPosition((1.f - dir) * (window.getSize().x / 2.f) + (dir * -1 * spawnPadding), window.getSize().y * 2.0f / 4.0f);
+
+            direction[0] = { 1.0f * dir ,0.0f };
+            speed[0] = rand() % 300 + 150.f;
+        }
 
         for (int i = 0; i < sizeof(spriteCloud) / sizeof(sf::Sprite); i++)
         {
             sf::Vector2f posCloud = spriteCloud[i].getPosition();
-            if (posCloud.x > window.getSize().x)
-            {
-                posCloud.x = -1.0f *textureCloud.getSize().x;
-            }
-            posCloud += velo[i+1] * deltaTime;
+            posCloud += direction[i+1] * speed[i+1] * deltaTime;
             spriteCloud[i].setPosition(posCloud);
+
+            if (posCloud.x < 0 - deletePadding - 150 || posCloud.x > window.getSize().x + deletePadding + 150)
+            {
+                float random = (float)rand() / RAND_MAX;
+                int dir;
+                if (random < 0.5f)
+                {
+                    dir = 1;
+                }
+                else
+                {
+                    dir = -1;
+                }
+                spriteCloud[i].setScale(-1.f * dir * (random+0.7), 1.f * (random + 0.7));
+                spriteCloud[i].setPosition((1.f - dir) * (window.getSize().x / 2.f) + (dir * -1 * (spawnPadding + 150)), spriteCloud[i].getPosition().y);
+
+                direction[i+1] = { 1.0f * dir ,0.0f };
+                speed[i+1] = rand() % 300 + 150.f;
+            }
         }
 
         // draw area
