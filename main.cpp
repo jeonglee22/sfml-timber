@@ -1,7 +1,18 @@
 #include <SFML/Graphics.hpp>
+#include <ctime>
+#include <cstdlib>
 
 int main()
 {
+    srand((int)time(0));
+
+    //printf("%d\n\n", RAND_MAX);
+
+    /*for (int i = 0; i < 10; i++)
+    {
+        printf("%d\n", rand());
+    }*/
+
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Timber!");
 
     sf::Texture textureBackground;
@@ -42,15 +53,56 @@ int main()
     spriteBee.setTexture(textureBee);
     spriteBee.setPosition(0, window.getSize().y * 3.0f / 4.0f);
 
-    while (window.isOpen())
+    // sf::Vector2f velo = { 200.0f, 0.f };
+    // 
+    // sf::Vector2f direction = {1.f,0.f};
+    // float speed = 200.f;
+    // sf::Vector2f velo = direction * speed;
+    //
+    // 두 가지 표현은 같은 표시 백터 : 좌표 <-> 방향과 크기
+
+    sf::Vector2f velo[sizeof(spriteCloud) / sizeof(sf::Sprite) + 1] = {  };
+    for (int i = 0; i < sizeof(spriteCloud) / sizeof(sf::Sprite) + 1; i++)
     {
+        velo[i] = { ((rand() % 20) / 2.0f + 1) * 150.0f, 0.f };
+    }
+
+    sf::Clock clock;
+
+    while (window.isOpen())
+    {   
+        sf::Time time = clock.restart();
+        float deltaTime = time.asSeconds();
+
+        // event loop
         sf::Event event;
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
                 window.close();
         }
-        
+
+        // update area
+        sf::Vector2f posBee = spriteBee.getPosition();
+        if (posBee.x > window.getSize().x)
+        {
+            posBee.x = -1.0f * textureBee.getSize().x;
+        }
+        posBee += velo[0] * deltaTime;
+        spriteBee.setPosition(posBee);
+
+        for (int i = 0; i < sizeof(spriteCloud) / sizeof(sf::Sprite); i++)
+        {
+            sf::Vector2f posCloud = spriteCloud[i].getPosition();
+            if (posCloud.x > window.getSize().x)
+            {
+                posCloud.x = -1.0f *textureCloud.getSize().x;
+            }
+            posCloud += velo[i+1] * deltaTime;
+            spriteCloud[i].setPosition(posCloud);
+        }
+
+        // draw area
         window.clear();
 
         window.draw(spriteBackground);
