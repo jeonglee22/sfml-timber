@@ -44,17 +44,6 @@ int main()
     Side sidePlayer = Side::RIGHT;
     float playerYPos = treeTexture.getSize().y + 50.f;
 
-    /*int life = 3;
-    sf::CircleShape heart[3];
-    for (int i = 0; i < 3; i++)
-    {
-        heart[i].setRadius(30);
-        heart[i].setOutlineColor(sf::Color::Black);
-        heart[i].setOutlineThickness(3.f);
-        heart[i].setPosition(50.f + i*100.f, 50.f);
-        heart[i].setFillColor(sf::Color::Red);
-    }*/
-
     spritePlayer.setTexture(playerTexture);
     spritePlayer.setOrigin(playerTexture.getSize().x / 2.f, playerTexture.getSize().y);
     spritePlayer.setPosition(window.getSize().x / 2.f, playerYPos);
@@ -114,20 +103,12 @@ int main()
     bool isRight = false;
     bool axeAppear = false;
     bool stopGame = false;
-    //float second = 0.f;
 
     while (window.isOpen())
     {   
         sf::Time time = clock.restart();
         float deltaTime = time.asSeconds();
-        /*second += deltaTime;
-
-        if (second > 0.5f)
-        {
-            updateBranch(sideBranch, NUM_BRANCHES);
-            second = 0.f;
-        }*/
-
+        
         bool leftDown = false;
         bool leftUp = false;
         bool rightDown = false;
@@ -151,18 +132,14 @@ int main()
                 case sf::Keyboard::Left:
                     if (!isLeft)
                     {
-                        //sidePlayer = Side::LEFT;
                         leftDown = true;
-                        //updateBranch(sideBranch, NUM_BRANCHES);
                     }
                     isLeft = true;
                     break;
                 case sf::Keyboard::Right:
                     if (!isRight)
                     {
-                        //sidePlayer = Side::RIGHT;
                         rightDown = true;
-                        //updateBranch(sideBranch, NUM_BRANCHES);
                     }
                     isRight = true;
                     break;
@@ -213,9 +190,7 @@ int main()
             updateBranch(sideBranch, NUM_BRANCHES);
             if (sideBranch[NUM_BRANCHES - 1] == sidePlayer)
             {
-                //printf("ºÎµúÇû½À´Ï´Ù\n");
                 stopGame = true;
-                //life--;
             }
         }
 
@@ -289,10 +264,6 @@ int main()
         }
         window.draw(spriteBackgroundObjects[0]);
         window.draw(spritePlayer);
-        /*for (int i = 0; i < life; i++)
-        {
-            window.draw(heart[i]);
-        }*/
         if (isLeft || isRight)
         {
             window.draw(spriteAxe);
