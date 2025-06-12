@@ -14,18 +14,26 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Timber!");
 
-    char files[6][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png", "graphics/cloud.png" , "graphics/player.png", "graphics/branch.png"};
+    char files[7][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png",
+        "graphics/cloud.png" , "graphics/player.png", "graphics/branch.png", "graphics/axe.png"
+    };
 
-    sf::Texture backgroudTexture, treeTexture, beeTexture, cloudTexture, playerTexture, branchTexture;
+    sf::Texture backgroudTexture, treeTexture, beeTexture, cloudTexture, playerTexture, branchTexture, axeTexture;
     backgroudTexture.loadFromFile(files[0]);
     treeTexture.loadFromFile(files[1]);
     beeTexture.loadFromFile(files[2]);
     cloudTexture.loadFromFile(files[3]);
     playerTexture.loadFromFile(files[4]);
     branchTexture.loadFromFile(files[5]);
+    axeTexture.loadFromFile(files[6]);
 
     sf::Sprite spriteBackground;
     spriteBackground.setTexture(backgroudTexture);
+
+    sf::Sprite spriteAxe;
+    spriteAxe.setTexture(axeTexture);
+    spriteAxe.setOrigin(axeTexture.getSize().x, axeTexture.getSize().y);
+    spriteAxe.setPosition(500.f, 500.f);
 
     sf::Sprite spriteTree;
     spriteTree.setTexture(treeTexture);
@@ -35,6 +43,17 @@ int main()
     sf::Sprite spritePlayer;
     Side sidePlayer = Side::RIGHT;
     float playerYPos = treeTexture.getSize().y + 50.f;
+
+    /*int life = 3;
+    sf::CircleShape heart[3];
+    for (int i = 0; i < 3; i++)
+    {
+        heart[i].setRadius(30);
+        heart[i].setOutlineColor(sf::Color::Black);
+        heart[i].setOutlineThickness(3.f);
+        heart[i].setPosition(50.f + i*100.f, 50.f);
+        heart[i].setFillColor(sf::Color::Red);
+    }*/
 
     spritePlayer.setTexture(playerTexture);
     spritePlayer.setOrigin(playerTexture.getSize().x / 2.f, playerTexture.getSize().y);
@@ -91,11 +110,28 @@ int main()
     int angle = 0;
     int spawnPadding = 100.f;
     int deletePadding = 350.f;
+    bool isLeft = false;
+    bool isRight = false;
+    bool axeAppear = false;
+    bool stopGame = false;
+    //float second = 0.f;
 
     while (window.isOpen())
     {   
         sf::Time time = clock.restart();
         float deltaTime = time.asSeconds();
+        /*second += deltaTime;
+
+        if (second > 0.5f)
+        {
+            updateBranch(sideBranch, NUM_BRANCHES);
+            second = 0.f;
+        }*/
+
+        bool leftDown = false;
+        bool leftUp = false;
+        bool rightDown = false;
+        bool rightUp = false;
 
         // event loop
         sf::Event event;
@@ -103,16 +139,32 @@ int main()
         {
             switch (event.type)
             {
+            case sf::Event::Closed:
+                window.close();
+                break;
             case sf::Event::KeyPressed:
                 switch (event.key.code)
                 {
+                case sf::Keyboard::Enter:
+                    stopGame = false;
+                    break;
                 case sf::Keyboard::Left:
-                    sidePlayer = Side::LEFT;
-                    updateBranch(sideBranch, NUM_BRANCHES);
+                    if (!isLeft)
+                    {
+                        //sidePlayer = Side::LEFT;
+                        leftDown = true;
+                        //updateBranch(sideBranch, NUM_BRANCHES);
+                    }
+                    isLeft = true;
                     break;
                 case sf::Keyboard::Right:
-                    sidePlayer = Side::RIGHT;
-                    updateBranch(sideBranch, NUM_BRANCHES);
+                    if (!isRight)
+                    {
+                        //sidePlayer = Side::RIGHT;
+                        rightDown = true;
+                        //updateBranch(sideBranch, NUM_BRANCHES);
+                    }
+                    isRight = true;
                     break;
                 case sf::Keyboard::Escape:
                     window.close();
@@ -122,13 +174,51 @@ int main()
                 }
                 break;
             case sf::Event::KeyReleased:
+                switch (event.key.code)
+                {
+                case sf::Keyboard::Left:
+                    isLeft = false;
+                    leftUp = true;
+                    break;
+                case sf::Keyboard::Right:
+                    isRight = false;
+                    rightUp = true;
+                    break;
+                default:
+                    break;
+                }
+                
                 break;
             default:
                 break;
             }
         }
 
+        if (stopGame)
+        {
+            continue;
+        }
+
         // update area
+        if (leftDown || rightDown)
+        {
+            if (leftDown)
+            {
+                sidePlayer = Side::LEFT;
+            }
+            else
+            {
+                sidePlayer = Side::RIGHT;
+            }
+            updateBranch(sideBranch, NUM_BRANCHES);
+            if (sideBranch[NUM_BRANCHES - 1] == sidePlayer)
+            {
+                //printf("ºÎµúÇû½À´Ï´Ù\n");
+                stopGame = true;
+                //life--;
+            }
+        }
+
         direction[0].y = ((90 - angle % 180) / 90.f) * 3.f;
         if (angle % 360 > 180)
         {
@@ -168,10 +258,14 @@ int main()
         case Side::LEFT:
             spritePlayer.setPosition(spriteTree.getPosition().x - 300.f, playerYPos);
             spritePlayer.setScale(-1.f, 1.f);
+            spriteAxe.setPosition(spritePlayer.getPosition().x + playerTexture.getSize().x / 2.f - 20.f, playerYPos - 60.f);
+            spriteAxe.setScale(-1.f, 1.f);
             break;
         case Side::RIGHT:
             spritePlayer.setPosition(spriteTree.getPosition().x + 300.f, playerYPos);
             spritePlayer.setScale(1.f, 1.f);
+            spriteAxe.setPosition(spritePlayer.getPosition().x - playerTexture.getSize().x / 2.f + 20.f, playerYPos - 60.f);
+            spriteAxe.setScale(1.f, 1.f);
             break;
         default:
             break;
@@ -195,6 +289,14 @@ int main()
         }
         window.draw(spriteBackgroundObjects[0]);
         window.draw(spritePlayer);
+        /*for (int i = 0; i < life; i++)
+        {
+            window.draw(heart[i]);
+        }*/
+        if (isLeft || isRight)
+        {
+            window.draw(spriteAxe);
+        }
         window.display();
     }
 
