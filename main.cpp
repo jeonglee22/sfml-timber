@@ -2,9 +2,10 @@
 #include <ctime>
 #include <cstdlib>
 
-void spawnPos(sf::Sprite*, int, sf::Vector2f*, float*);
-void spriteTextureSetting(sf::Sprite*, int, sf::Texture*);
-void resetPos(sf::Sprite*, sf::Vector2f*, float*, int*, int, int);
+enum class Side { LEFT, RIGHT, NONE};
+
+void spawnPos(sf::Sprite*, int, sf::Vector2f*, float*, int);
+void resetPos(sf::Sprite*, sf::Vector2f*, float*, int*, int, int, int);
 
 int main()
 {
@@ -12,29 +13,62 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Timber!");
 
-    char files[4][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png", "graphics/cloud.png"};
+    char files[6][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png", "graphics/cloud.png" , "graphics/player.png", "graphics/branch.png"};
 
-    sf::Texture textures[4];
-    for (int i = 0; i < 4; i++)
-    {
-        textures[i].loadFromFile(files[i]);
-    }
+    sf::Texture backgroudTexture, treeTexture, beeTexture, cloudTexture, playerTexture, branchTexture;
+    backgroudTexture.loadFromFile(files[0]);
+    treeTexture.loadFromFile(files[1]);
+    beeTexture.loadFromFile(files[2]);
+    cloudTexture.loadFromFile(files[3]);
+    playerTexture.loadFromFile(files[4]);
+    branchTexture.loadFromFile(files[5]);
 
     sf::Sprite spriteBackground;
-    spriteBackground.setTexture(textures[0]);
+    spriteBackground.setTexture(backgroudTexture);
 
     sf::Sprite spriteTree;
-    spriteTree.setTexture(textures[1]);
-    spriteTree.setOrigin(textures[1].getSize().x / 2.0f, 0);
+    spriteTree.setTexture(treeTexture);
+    spriteTree.setOrigin(treeTexture.getSize().x / 2.0f, 0);
     spriteTree.setPosition(window.getSize().x / 2.0f, 0);
 
-    sf::Sprite sprites[4];
-    spriteTextureSetting(sprites, sizeof(sprites) / sizeof(sf::Sprite), textures);
+    sf::Sprite spritePlayer;
+    Side sidePlayer = Side::RIGHT;
+    float playerYPos = treeTexture.getSize().y + 50.f;
 
-    sf::Vector2f direction[sizeof(sprites) / sizeof(sf::Sprite)] = {  };
-    float speed[sizeof(sprites) / sizeof(sf::Sprite)] = {  };
+    spritePlayer.setTexture(playerTexture);
+    spritePlayer.setOrigin(playerTexture.getSize().x / 2.f, playerTexture.getSize().y);
+    spritePlayer.setPosition(window.getSize().x / 2.f, playerYPos);
 
-    spawnPos(sprites, sizeof(sprites) / sizeof(sf::Sprite), direction, speed);
+    const int NUM_BRANCHES = 6;
+    sf::Sprite spriteBranch[NUM_BRANCHES];
+    Side sideBranch[NUM_BRANCHES] = { Side::LEFT , Side::RIGHT, Side::NONE, Side::LEFT , Side::RIGHT, Side::NONE };
+
+    for (int i = 0; i < NUM_BRANCHES; i++)
+    {
+        spriteBranch[i].setTexture(branchTexture);
+        spriteBranch[i].setOrigin(-1.f * treeTexture.getSize().x / 2.f, 0.f);
+        spriteBranch[i].setPosition(window.getSize().x / 2.f, 150.f * i);
+    }
+
+    int beeCount = 1;
+
+    sf::Sprite spriteBackgroundObjects[4];
+    for (int i = 0; i < 4; i++)
+    {
+        if (i < beeCount)
+        {
+            spriteBackgroundObjects[i].setTexture(beeTexture);
+        }
+        else
+        {
+            spriteBackgroundObjects[i].setTexture(cloudTexture);
+        }
+    }
+
+    sf::Vector2f direction[sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite)] = {  };
+    float speed[sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite)] = {  };
+
+    spawnPos(spriteBackgroundObjects, sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite), direction, speed, beeCount);
 
     sf::Clock clock;
     int angle = 0;
@@ -62,36 +96,72 @@ int main()
         }
         angle++;
 
-        for (int i = 0; i < sizeof(sprites) / sizeof(sf::Sprite); i++)
+        for (int i = 0; i < sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite); i++)
         {
-            sf::Vector2f pos = sprites[i].getPosition();
+            sf::Vector2f pos = spriteBackgroundObjects[i].getPosition();
             pos += direction[i] * speed[i] * deltaTime;
-            sprites[i].setPosition(pos);
+            spriteBackgroundObjects[i].setPosition(pos);
 
             if (pos.x < 0 - deletePadding || pos.x > 1920 + deletePadding)
             {
-                resetPos(sprites, direction, speed, &angle, i, spawnPadding);
+                resetPos(spriteBackgroundObjects, direction, speed, &angle, i, spawnPadding, beeCount);
             }
+        }
+
+        for (int i = 0; i < NUM_BRANCHES; i++)
+        {
+            switch (sideBranch[i])
+            {
+            case Side::LEFT:
+                spriteBranch[i].setScale(-1.f, 1.f);
+                break;
+            case Side::RIGHT:
+                spriteBranch[i].setScale(1.f, 1.f);
+                break;
+            default:
+                break;
+            }
+        }
+
+        switch (sidePlayer)
+        {
+        case Side::LEFT:
+            spritePlayer.setPosition(window.getSize().x / 2.f - 300.f, playerYPos);
+            spritePlayer.setScale(-1.f, 1.f);
+            break;
+        case Side::RIGHT:
+            spritePlayer.setPosition(window.getSize().x / 2.f + 300.f, playerYPos);
+            spritePlayer.setScale(1.f, 1.f);
+            break;
+        default:
+            break;
         }
 
         // draw area
         window.clear();
 
         window.draw(spriteBackground);
-        for (int i = 1; i < sizeof(sprites) / sizeof(sf::Sprite); i++)
+        for (int i = beeCount; i < sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite); i++)
         {
-            window.draw(sprites[i]);
+            window.draw(spriteBackgroundObjects[i]);
         }
         window.draw(spriteTree);
-        window.draw(sprites[0]);
-
+        for (int i = 0; i < NUM_BRANCHES; i++)
+        {
+            if (sideBranch[i] != Side::NONE)
+            {
+                window.draw(spriteBranch[i]);
+            }
+        }
+        window.draw(spriteBackgroundObjects[0]);
+        window.draw(spritePlayer);
         window.display();
     }
 
     return 0;
 }
 
-void spawnPos(sf::Sprite* sprites, int size, sf::Vector2f* direction, float* speed)
+void spawnPos(sf::Sprite* sprites, int size, sf::Vector2f* direction, float* speed, int beeCount)
 {
     for (int i = 0; i < size; i++)
     {
@@ -102,36 +172,22 @@ void spawnPos(sf::Sprite* sprites, int size, sf::Vector2f* direction, float* spe
             dir = 1;
         }
         
-        if (!i)
+        if (i < beeCount)
         {
-            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4), 1080 * 2.0f / 4.0f);
+            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4), (rand() % 100) + 1080 * 2.0f / 4.0f);
+            sprites[i].setScale(-1.f * dir, 1.f);
         }
         else
         {
-            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4), 1080 * ((i-1) / 8.0f));
+            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4), (rand() % 100) + 1080 * ((i-beeCount) / 8.0f));
+            sprites[i].setScale(-1.f * dir * (random + 0.7f), 1.f * (random + 0.7f));
         }
-        sprites[i].setScale(-1.f * dir, 1.f);
         speed[i] = rand() % 300 + 150.f;
         direction[i] = { 1.0f * dir ,0.0f };
     }
 }
 
-void spriteTextureSetting(sf::Sprite* sprites, int size, sf::Texture* textures)
-{
-    for (int i = 0; i < size; i++)
-    {
-        if (!i)
-        {
-            sprites[i].setTexture(textures[2]);
-        }
-        else
-        {
-            sprites[i].setTexture(textures[3]);
-        }
-    }
-}
-
-void resetPos(sf::Sprite* sprites, sf::Vector2f* direction, float* speed, int* angle, int num, int spawnPadding)
+void resetPos(sf::Sprite* sprites, sf::Vector2f* direction, float* speed, int* angle, int num, int spawnPadding, int beeCount)
 {
     if (num == 0)
     {
@@ -146,15 +202,15 @@ void resetPos(sf::Sprite* sprites, sf::Vector2f* direction, float* speed, int* a
         dir = 1;
     }
 
-    sprites[num].setScale(-1.f * dir, 1.f);
-
-    if (!num)
+    if (num < beeCount)
     {
-        sprites[num].setPosition((1.f - dir) * (1920 / 2.f) + (dir * -1 * (spawnPadding)), 1080 * 2.0f / 4.0f);
+        sprites[num].setPosition((1.f - dir) * (1920 / 2.f) + (dir * -1 * (spawnPadding)), (rand() % 100) + 1080 * 2.0f / 4.0f);
+        sprites[num].setScale(-1.f * dir, 1.f);
     }
     else
     {
-        sprites[num].setPosition((1.f - dir) * (1920 / 2.f) + (dir * -1 * (spawnPadding)), 1080 * ((num - 1) / 8.0f));
+        sprites[num].setPosition((1.f - dir) * (1920 / 2.f) + (dir * -1 * (spawnPadding)), (rand() % 100) + 1080 * ((num - beeCount) / 8.0f));
+        sprites[num].setScale(-1.f * dir * (random + 0.7f), 1.f * (random + 0.7f));
     }
             
     direction[num] = { 1.0f * dir ,0.0f };
