@@ -6,6 +6,7 @@ enum class Side { LEFT, RIGHT, NONE};
 
 void spawnPos(sf::Sprite*, int, sf::Vector2f*, float*, int);
 void resetPos(sf::Sprite*, sf::Vector2f*, float*, int*, int, int, int);
+void updateBranch(Side*, int);
 
 int main()
 {
@@ -41,19 +42,35 @@ int main()
 
     const int NUM_BRANCHES = 6;
     sf::Sprite spriteBranch[NUM_BRANCHES];
-    Side sideBranch[NUM_BRANCHES] = { Side::LEFT , Side::RIGHT, Side::NONE, Side::LEFT , Side::RIGHT, Side::NONE };
+    Side sideBranch[NUM_BRANCHES] = {};
 
     for (int i = 0; i < NUM_BRANCHES; i++)
     {
         spriteBranch[i].setTexture(branchTexture);
         spriteBranch[i].setOrigin(-1.f * treeTexture.getSize().x / 2.f, 0.f);
         spriteBranch[i].setPosition(window.getSize().x / 2.f, 150.f * i);
+
+        int newbranch = rand() % 3;
+        switch (newbranch)
+        {
+        case 0:
+            sideBranch[i] = Side::LEFT;
+            break;
+        case 1:
+            sideBranch[i] = Side::RIGHT;
+            break;
+        default:
+            sideBranch[i] = Side::NONE;
+            break;
+        }
     }
+    sideBranch[5] = Side::NONE;
 
-    int beeCount = 1;
+    const int beeCount = 1;
+    const int cloudCount = 3;
 
-    sf::Sprite spriteBackgroundObjects[4];
-    for (int i = 0; i < 4; i++)
+    sf::Sprite spriteBackgroundObjects[beeCount + cloudCount];
+    for (int i = 0; i < beeCount + cloudCount; i++)
     {
         if (i < beeCount)
         {
@@ -65,10 +82,10 @@ int main()
         }
     }
 
-    sf::Vector2f direction[sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite)] = {  };
-    float speed[sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite)] = {  };
+    sf::Vector2f direction[beeCount + cloudCount] = {  };
+    float speed[beeCount + cloudCount] = {  };
 
-    spawnPos(spriteBackgroundObjects, sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite), direction, speed, beeCount);
+    spawnPos(spriteBackgroundObjects, beeCount + cloudCount, direction, speed, beeCount);
 
     sf::Clock clock;
     int angle = 0;
@@ -84,8 +101,31 @@ int main()
         sf::Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
-                window.close();
+            switch (event.type)
+            {
+            case sf::Event::KeyPressed:
+                switch (event.key.code)
+                {
+                case sf::Keyboard::Left:
+                    sidePlayer = Side::LEFT;
+                    updateBranch(sideBranch, NUM_BRANCHES);
+                    break;
+                case sf::Keyboard::Right:
+                    sidePlayer = Side::RIGHT;
+                    updateBranch(sideBranch, NUM_BRANCHES);
+                    break;
+                case sf::Keyboard::Escape:
+                    window.close();
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case sf::Event::KeyReleased:
+                break;
+            default:
+                break;
+            }
         }
 
         // update area
@@ -96,7 +136,7 @@ int main()
         }
         angle++;
 
-        for (int i = 0; i < sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite); i++)
+        for (int i = 0; i < beeCount + cloudCount; i++)
         {
             sf::Vector2f pos = spriteBackgroundObjects[i].getPosition();
             pos += direction[i] * speed[i] * deltaTime;
@@ -126,11 +166,11 @@ int main()
         switch (sidePlayer)
         {
         case Side::LEFT:
-            spritePlayer.setPosition(window.getSize().x / 2.f - 300.f, playerYPos);
+            spritePlayer.setPosition(spriteTree.getPosition().x - 300.f, playerYPos);
             spritePlayer.setScale(-1.f, 1.f);
             break;
         case Side::RIGHT:
-            spritePlayer.setPosition(window.getSize().x / 2.f + 300.f, playerYPos);
+            spritePlayer.setPosition(spriteTree.getPosition().x + 300.f, playerYPos);
             spritePlayer.setScale(1.f, 1.f);
             break;
         default:
@@ -141,7 +181,7 @@ int main()
         window.clear();
 
         window.draw(spriteBackground);
-        for (int i = beeCount; i < sizeof(spriteBackgroundObjects) / sizeof(sf::Sprite); i++)
+        for (int i = beeCount; i < beeCount + cloudCount; i++)
         {
             window.draw(spriteBackgroundObjects[i]);
         }
@@ -215,4 +255,26 @@ void resetPos(sf::Sprite* sprites, sf::Vector2f* direction, float* speed, int* a
             
     direction[num] = { 1.0f * dir ,0.0f };
     speed[num] = rand() % 300 + 150.f;
+}
+
+void updateBranch(Side* Branches, int size)
+{
+    for (int i = size - 1; i > 0 ; i--)
+    {
+        Branches[i] = Branches[i - 1];
+    }
+
+    int newbranch = rand() % 3;
+    switch (newbranch)
+    {
+    case 0:
+        Branches[0] = Side::LEFT;
+        break;
+    case 1:
+        Branches[0] = Side::RIGHT;
+        break;
+    default:
+        Branches[0] = Side::NONE;
+        break;
+    }
 }
