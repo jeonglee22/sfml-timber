@@ -14,8 +14,9 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Timber!");
 
-    char files[7][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png",
-        "graphics/cloud.png" , "graphics/player.png", "graphics/branch.png", "graphics/axe.png"
+    char files[8][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png",
+        "graphics/cloud.png" , "graphics/player.png", "graphics/branch.png", "graphics/axe.png",
+        "fonts/KOMIKAP_.ttf"
     };
 
     sf::Texture backgroudTexture, treeTexture, beeTexture, cloudTexture, playerTexture, branchTexture, axeTexture;
@@ -26,6 +27,9 @@ int main()
     playerTexture.loadFromFile(files[4]);
     branchTexture.loadFromFile(files[5]);
     axeTexture.loadFromFile(files[6]);
+
+    sf::Font gameFont;
+    gameFont.loadFromFile(files[7]);
 
     sf::Sprite spriteBackground;
     spriteBackground.setTexture(backgroudTexture);
@@ -95,6 +99,35 @@ int main()
 
     spawnPos(spriteBackgroundObjects, beeCount + cloudCount, direction, speed, beeCount);
 
+    sf::Text scoreText;
+    scoreText.setFont(gameFont);
+    scoreText.setString("SCORE : 0");
+    scoreText.setCharacterSize(100);
+    scoreText.setFillColor(sf::Color::White);
+    scoreText.setPosition(20,20);
+
+    char texts[3][100] = { "Press Enter to start!", "Press Enter to resume!", "Press Enter to restart!" };
+
+    sf::Text gameText;
+    gameText.setFont(gameFont);
+    gameText.setString(texts[0]);
+    gameText.setCharacterSize(100);
+    gameText.setFillColor(sf::Color::White);
+    gameText.setPosition(window.getSize().x / 2.f, window.getSize().y / 2.f);
+    sf::Vector2f messageOrigin;
+    messageOrigin.x = gameText.getLocalBounds().width * 0.5f;
+    messageOrigin.y = gameText.getLocalBounds().height * 0.5f;
+    gameText.setOrigin(messageOrigin);
+
+    bool beginGame = true;
+
+    sf::RectangleShape timeBar;
+    float timeBarWidth = 400;
+    float timeBarHeight = 80;
+    timeBar.setSize({ timeBarWidth ,timeBarHeight });
+    timeBar.setFillColor(sf::Color::Red);
+    timeBar.setPosition(window.getSize().x / 2.f - timeBarWidth / 2.f, window.getSize().y - 100.f);
+
     sf::Clock clock;
     int angle = 0;
     int spawnPadding = 100.f;
@@ -102,7 +135,10 @@ int main()
     bool isLeft = false;
     bool isRight = false;
     bool axeAppear = false;
-    bool stopGame = false;
+    bool stopGame = true;
+    int score = 0;
+    float remainingTime = 5.f;
+    float timeBarWidthPerSecond = timeBarWidth / remainingTime;
 
     while (window.isOpen())
     {   
@@ -126,9 +162,6 @@ int main()
             case sf::Event::KeyPressed:
                 switch (event.key.code)
                 {
-                case sf::Keyboard::Enter:
-                    stopGame = false;
-                    break;
                 case sf::Keyboard::Left:
                     if (!isLeft)
                     {
@@ -153,6 +186,31 @@ int main()
             case sf::Event::KeyReleased:
                 switch (event.key.code)
                 {
+                case sf::Keyboard::Enter:
+                    stopGame = !stopGame;
+                    if (beginGame)
+                    {
+                        beginGame = !beginGame;
+                    }
+                    else
+                    {
+                        if (remainingTime <= 0.f || sideBranch[NUM_BRANCHES - 1] == sidePlayer)
+                        {
+                            remainingTime = 5.f;
+                            score = 0;
+                            scoreText.setString("SCORE : " + std::to_string(score));
+                            sideBranch[NUM_BRANCHES - 1] = Side::NONE;
+                        }
+                        else
+                        {
+                            gameText.setString(texts[1]);
+                            sf::Vector2f messageOrigin;
+                            messageOrigin.x = gameText.getLocalBounds().width * 0.5f;
+                            messageOrigin.y = gameText.getLocalBounds().height * 0.5f;
+                            gameText.setOrigin(messageOrigin);
+                        }
+                    }
+                    break;
                 case sf::Keyboard::Left:
                     isLeft = false;
                     leftUp = true;
@@ -171,79 +229,100 @@ int main()
             }
         }
 
-        if (stopGame)
+        if(!stopGame)
         {
-            continue;
-        }
-
-        // update area
-        if (leftDown || rightDown)
-        {
-            if (leftDown)
+            remainingTime -= deltaTime;
+            if (remainingTime <= 0.f)
             {
-                sidePlayer = Side::LEFT;
-            }
-            else
-            {
-                sidePlayer = Side::RIGHT;
-            }
-            updateBranch(sideBranch, NUM_BRANCHES);
-            if (sideBranch[NUM_BRANCHES - 1] == sidePlayer)
-            {
+                remainingTime = 0;
                 stopGame = true;
+                gameText.setString(texts[2]);
+                sf::Vector2f messageOrigin;
+                messageOrigin.x = gameText.getLocalBounds().width * 0.5f;
+                messageOrigin.y = gameText.getLocalBounds().height * 0.5f;
+                gameText.setOrigin(messageOrigin);
             }
-        }
+            timeBar.setSize({ timeBarWidthPerSecond * remainingTime , timeBarHeight });
 
-        direction[0].y = ((90 - angle % 180) / 90.f) * 3.f;
-        if (angle % 360 > 180)
-        {
-            direction[0].y *= -1.f;
-        }
-        angle++;
-
-        for (int i = 0; i < beeCount + cloudCount; i++)
-        {
-            sf::Vector2f pos = spriteBackgroundObjects[i].getPosition();
-            pos += direction[i] * speed[i] * deltaTime;
-            spriteBackgroundObjects[i].setPosition(pos);
-
-            if (pos.x < 0 - deletePadding || pos.x > 1920 + deletePadding)
+            // update area
+            if (leftDown || rightDown)
             {
-                resetPos(spriteBackgroundObjects, direction, speed, &angle, i, spawnPadding, beeCount);
+                if (leftDown)
+                {
+                    sidePlayer = Side::LEFT;
+                }
+                else
+                {
+                    sidePlayer = Side::RIGHT;
+                }
+                updateBranch(sideBranch, NUM_BRANCHES);
+                if (sideBranch[NUM_BRANCHES - 1] == sidePlayer)
+                {
+                    stopGame = true;
+                    gameText.setString(texts[2]);
+                    sf::Vector2f messageOrigin;
+                    messageOrigin.x = gameText.getLocalBounds().width * 0.5f;
+                    messageOrigin.y = gameText.getLocalBounds().height * 0.5f;
+                    gameText.setOrigin(messageOrigin);
+                }
+                else
+                {
+                    score += 10;
+                    scoreText.setString("SCORE : " + std::to_string(score));
+                }
             }
-        }
 
-        for (int i = 0; i < NUM_BRANCHES; i++)
-        {
-            switch (sideBranch[i])
+            direction[0].y = ((90 - angle % 180) / 90.f) * 3.f;
+            if (angle % 360 > 180)
+            {
+                direction[0].y *= -1.f;
+            }
+            angle++;
+
+            for (int i = 0; i < beeCount + cloudCount; i++)
+            {
+                sf::Vector2f pos = spriteBackgroundObjects[i].getPosition();
+                pos += direction[i] * speed[i] * deltaTime;
+                spriteBackgroundObjects[i].setPosition(pos);
+
+                if (pos.x < 0 - deletePadding || pos.x > 1920 + deletePadding)
+                {
+                    resetPos(spriteBackgroundObjects, direction, speed, &angle, i, spawnPadding, beeCount);
+                }
+            }
+
+            for (int i = 0; i < NUM_BRANCHES; i++)
+            {
+                switch (sideBranch[i])
+                {
+                case Side::LEFT:
+                    spriteBranch[i].setScale(-1.f, 1.f);
+                    break;
+                case Side::RIGHT:
+                    spriteBranch[i].setScale(1.f, 1.f);
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            switch (sidePlayer)
             {
             case Side::LEFT:
-                spriteBranch[i].setScale(-1.f, 1.f);
+                spritePlayer.setPosition(spriteTree.getPosition().x - 300.f, playerYPos);
+                spritePlayer.setScale(-1.f, 1.f);
+                spriteAxe.setPosition(spritePlayer.getPosition().x + playerTexture.getSize().x / 2.f - 20.f, playerYPos - 60.f);
+                spriteAxe.setScale(-1.f, 1.f);
                 break;
             case Side::RIGHT:
-                spriteBranch[i].setScale(1.f, 1.f);
+                spritePlayer.setPosition(spriteTree.getPosition().x + 300.f, playerYPos);
+                spritePlayer.setScale(1.f, 1.f);
+                spriteAxe.setPosition(spritePlayer.getPosition().x - playerTexture.getSize().x / 2.f + 20.f, playerYPos - 60.f);
+                spriteAxe.setScale(1.f, 1.f);
                 break;
             default:
                 break;
             }
-        }
-
-        switch (sidePlayer)
-        {
-        case Side::LEFT:
-            spritePlayer.setPosition(spriteTree.getPosition().x - 300.f, playerYPos);
-            spritePlayer.setScale(-1.f, 1.f);
-            spriteAxe.setPosition(spritePlayer.getPosition().x + playerTexture.getSize().x / 2.f - 20.f, playerYPos - 60.f);
-            spriteAxe.setScale(-1.f, 1.f);
-            break;
-        case Side::RIGHT:
-            spritePlayer.setPosition(spriteTree.getPosition().x + 300.f, playerYPos);
-            spritePlayer.setScale(1.f, 1.f);
-            spriteAxe.setPosition(spritePlayer.getPosition().x - playerTexture.getSize().x / 2.f + 20.f, playerYPos - 60.f);
-            spriteAxe.setScale(1.f, 1.f);
-            break;
-        default:
-            break;
         }
 
         // draw area
@@ -264,10 +343,23 @@ int main()
         }
         window.draw(spriteBackgroundObjects[0]);
         window.draw(spritePlayer);
-        if (isLeft || isRight)
+        if ((isLeft || isRight) && !stopGame)
         {
             window.draw(spriteAxe);
         }
+        if (stopGame)
+        {
+            window.draw(gameText);
+            if (!beginGame)
+            {
+                window.draw(scoreText);
+            }
+        }
+        else
+        {
+            window.draw(scoreText);
+        }
+        window.draw(timeBar);
         window.display();
     }
 
