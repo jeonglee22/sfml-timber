@@ -33,13 +33,6 @@ int main()
     ball.setOutlineThickness(1.f);
     ball.setPosition(window.getSize().x / 2.f, 500.f);
 
-    /*sf::CircleShape ball2;
-    ball2.setRadius(5.f);
-    ball2.setFillColor(sf::Color::Red);
-    ball2.setOutlineColor(sf::Color::Black);
-    ball2.setOutlineThickness(1.f);
-    ball2.setPosition(window.getSize().x / 2.f, 400.f);*/
-
     sf::RectangleShape blocks[7][7];
     bool blockDestroy[7][7];
     for (int i = 0; i < 7; i++)
@@ -58,10 +51,7 @@ int main()
     }
 
     float ballSpeed = 200.f;
-    sf::Vector2f ballDirection = {0.f, 1.f};
-
-    /*float ball2Speed = 200.f;
-    sf::Vector2f ball2Direction = { 1.f, 0.f };*/
+    sf::Vector2f ballDirection = {1.f, 1.f};
 
     sf::Clock clock;
 
@@ -141,62 +131,6 @@ int main()
         }
 
         blockDestroyChecking(blockDestroy, ballPos, blocks, &ballDirection);
-        /*if(!blockDestroy[3][3] && ballPos.x >= blocks[3][3].getPosition().x - blocks[3][3].getSize().x / 2.f &&
-            ballPos.x <= blocks[3][3].getPosition().x + blocks[3][3].getSize().x / 2.f &&
-            ballPos.y >= blocks[3][3].getPosition().y + blocks[3][3].getSize().y / 2.f &&
-            ballPos.y <= blocks[3][3].getPosition().y + blocks[3][3].getSize().y / 2.f + ball.getRadius())
-        {
-            ballDirection = { ballDirection.x,-ballDirection.y };
-            blockDestroy[3][3] = true;
-        }
-        else if(!blockDestroy[3][3] && ballPos.x >= blocks[3][3].getPosition().x - blocks[3][3].getSize().x / 2.f &&
-            ballPos.x <= blocks[3][3].getPosition().x + blocks[3][3].getSize().x / 2.f &&
-            ballPos.y <= blocks[3][3].getPosition().y - blocks[3][3].getSize().y / 2.f &&
-            ballPos.y >= blocks[3][3].getPosition().y - blocks[3][3].getSize().y / 2.f - ball.getRadius())
-        {
-            ballDirection = { ballDirection.x,-ballDirection.y };
-            blockDestroy[3][3] = true;
-        }
-        else if(!blockDestroy[3][3] && ballPos.x <= blocks[3][3].getPosition().x - blocks[3][3].getSize().x / 2.f &&
-            ballPos.x >= blocks[3][3].getPosition().x - blocks[3][3].getSize().x / 2.f - ball.getRadius() &&
-            ballPos.y >= blocks[3][3].getPosition().y - blocks[3][3].getSize().y / 2.f &&
-            ballPos.y <= blocks[3][3].getPosition().y + blocks[3][3].getSize().y / 2.f )
-        {
-            ballDirection = { -ballDirection.x,ballDirection.y };
-            blockDestroy[3][3] = true;
-        }
-        else if(!blockDestroy[3][3] && ballPos.x >= blocks[3][3].getPosition().x + blocks[3][3].getSize().x / 2.f &&
-            ballPos.x <= blocks[3][3].getPosition().x + blocks[3][3].getSize().x / 2.f + ball.getRadius() &&
-            ballPos.y >= blocks[3][3].getPosition().y - blocks[3][3].getSize().y / 2.f &&
-            ballPos.y <= blocks[3][3].getPosition().y + blocks[3][3].getSize().y / 2.f )
-        {
-            ballDirection = { -ballDirection.x,ballDirection.y };
-            blockDestroy[3][3] = true;
-        }*/
-
-        /*sf::Vector2f ball2Pos = ball2.getPosition();
-        ball2Pos += ball2Direction * ball2Speed * deltaTime;
-        ball2.setPosition(ball2Pos);
-
-        if (ball2Pos.x <= player.getPosition().x + player.getSize().x / 2.f &&
-            ball2Pos.x > player.getPosition().x - player.getSize().x / 2.f &&
-            ball2Pos.y > player.getPosition().y - player.getSize().y &&
-            ball2Pos.y <= player.getPosition().y)
-        {
-            ball2Direction = { ball2Direction.x,-ball2Direction.y };
-        }
-        if (ball2Pos.y <= 0)
-        {
-            ball2Direction = { ball2Direction.x,-ball2Direction.y };
-        }
-        if (ball2Pos.x <= window.getSize().x / 2.f - background.getSize().x / 2.f)
-        {
-            ball2Direction = { -ball2Direction.x,ball2Direction.y };
-        }
-        if (ball2Pos.x >= window.getSize().x / 2.f + background.getSize().x / 2.f - 10.f)
-        {
-            ball2Direction = { -ball2Direction.x,ball2Direction.y };
-        }*/
             
         sf::Vector2f playerPos = player.getPosition();
         playerPos += playerDir * deltaTime * playerSpeed;
@@ -237,7 +171,7 @@ void blockDestroyChecking(bool blockDestroy[][7], sf::Vector2f ballPos, sf::Rect
                 ballPos.y >= blocks[i][j].getPosition().y + blocks[i][j].getSize().y / 2.f &&
                 ballPos.y <= blocks[i][j].getPosition().y + blocks[i][j].getSize().y / 2.f + 5.f)
             {
-                *ballDirection = { ballDirection->x,-ballDirection->y };
+                *ballDirection = { ballDirection->x,-1 * ballDirection->y };
                 blockDestroy[i][j] = true;
             }
             else if (!blockDestroy[i][j] && ballPos.x >= blocks[i][j].getPosition().x - blocks[i][j].getSize().x / 2.f &&
@@ -245,7 +179,7 @@ void blockDestroyChecking(bool blockDestroy[][7], sf::Vector2f ballPos, sf::Rect
                 ballPos.y <= blocks[i][j].getPosition().y - blocks[i][j].getSize().y / 2.f &&
                 ballPos.y >= blocks[i][j].getPosition().y - blocks[i][j].getSize().y / 2.f - 5.f)
             {
-                *ballDirection = { ballDirection->x, -ballDirection->y };
+                *ballDirection = { ballDirection->x, -1 * ballDirection->y };
                 blockDestroy[i][j] = true;
             }
             else if (!blockDestroy[i][j] && ballPos.x <= blocks[i][j].getPosition().x - blocks[i][j].getSize().x / 2.f &&
@@ -253,7 +187,7 @@ void blockDestroyChecking(bool blockDestroy[][7], sf::Vector2f ballPos, sf::Rect
                 ballPos.y >= blocks[i][j].getPosition().y - blocks[i][j].getSize().y / 2.f &&
                 ballPos.y <= blocks[i][j].getPosition().y + blocks[i][j].getSize().y / 2.f)
             {
-                *ballDirection = { -ballDirection->x,ballDirection->y };
+                *ballDirection = { -1 *ballDirection->x, ballDirection->y };
                 blockDestroy[i][j] = true;
             }
             else if (!blockDestroy[i][j] && ballPos.x >= blocks[i][j].getPosition().x + blocks[i][j].getSize().x / 2.f &&
@@ -261,7 +195,7 @@ void blockDestroyChecking(bool blockDestroy[][7], sf::Vector2f ballPos, sf::Rect
                 ballPos.y >= blocks[i][j].getPosition().y - blocks[i][j].getSize().y / 2.f &&
                 ballPos.y <= blocks[i][j].getPosition().y + blocks[i][j].getSize().y / 2.f)
             {
-                *ballDirection = { -ballDirection->x,ballDirection->y };
+                *ballDirection = { -1 *ballDirection->x,ballDirection->y };
                 blockDestroy[i][j] = true;
             }
         }

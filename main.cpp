@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <ctime>
 #include <cstdlib>
+#include <SFML/Audio.hpp>
 
 enum class Side { LEFT, RIGHT, NONE};
 
@@ -14,12 +15,12 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "Timber!");
 
-    char files[8][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png",
+    char files[12][100] = { "graphics/background.png", "graphics/tree.png", "graphics/bee.png",
         "graphics/cloud.png" , "graphics/player.png", "graphics/branch.png", "graphics/axe.png",
-        "fonts/KOMIKAP_.ttf"
+        "fonts/KOMIKAP_.ttf", "sound/chop.wav", "sound/death.wav","sound/out_of_time.wav", "graphics/log.png"
     };
 
-    sf::Texture backgroudTexture, treeTexture, beeTexture, cloudTexture, playerTexture, branchTexture, axeTexture;
+    sf::Texture backgroudTexture, treeTexture, beeTexture, cloudTexture, playerTexture, branchTexture, axeTexture, logTexture;
     backgroudTexture.loadFromFile(files[0]);
     treeTexture.loadFromFile(files[1]);
     beeTexture.loadFromFile(files[2]);
@@ -27,9 +28,15 @@ int main()
     playerTexture.loadFromFile(files[4]);
     branchTexture.loadFromFile(files[5]);
     axeTexture.loadFromFile(files[6]);
+    logTexture.loadFromFile(files[11]);
 
     sf::Font gameFont;
     gameFont.loadFromFile(files[7]);
+
+    sf::SoundBuffer chopSoundBuffer, deathSoundBuffer, outoftimeSoundBuffer;
+    chopSoundBuffer.loadFromFile(files[8]);
+    deathSoundBuffer.loadFromFile(files[9]);
+    outoftimeSoundBuffer.loadFromFile(files[10]);
 
     sf::Sprite spriteBackground;
     spriteBackground.setTexture(backgroudTexture);
@@ -128,10 +135,34 @@ int main()
     timeBar.setFillColor(sf::Color::Red);
     timeBar.setPosition(window.getSize().x / 2.f - timeBarWidth / 2.f, window.getSize().y - 100.f);
 
+    sf::Sound chopSound, deathSound, outoftimeSound;
+    chopSound.setBuffer(chopSoundBuffer);
+    deathSound.setBuffer(deathSoundBuffer);
+    outoftimeSound.setBuffer(outoftimeSoundBuffer);
+
+    sf::Sprite spriteLogs[40];
+    sf::Vector2f logInitPosition = spriteTree.getPosition();
+    logInitPosition.y = treeTexture.getSize().y;
+    bool logMoving[40];
+    sf::Vector2f logDirection[40];
+    sf::Vector2f logVelocity[40];
+    float logSpeed = 1000.f;
+    for (int i =0; i<40; i++)
+    {
+        spriteLogs[i].setTexture(logTexture);
+        spriteLogs[i].setOrigin(logTexture.getSize().x / 2.f, logTexture.getSize().y);
+        spriteLogs[i].setPosition(logInitPosition);
+
+        logMoving[i] = false;
+        logDirection[i] = { 1.f, -1.f };
+        logVelocity[i] = logDirection[i] * logSpeed;
+    }
+    sf::Vector2f gravity = {0.f, 1000.f};
+
     sf::Clock clock;
     int angle = 0;
-    int spawnPadding = 100.f;
-    int deletePadding = 350.f;
+    float spawnPadding = 100.f;
+    float deletePadding = 350.f;
     bool isLeft = false;
     bool isRight = false;
     bool axeAppear = false;
@@ -139,6 +170,7 @@ int main()
     int score = 0;
     float remainingTime = 5.f;
     float timeBarWidthPerSecond = timeBarWidth / remainingTime;
+    int logCount = 0;
 
     while (window.isOpen())
     {   
@@ -233,7 +265,9 @@ int main()
         {
             remainingTime -= deltaTime;
             if (remainingTime <= 0.f)
-            {
+            { 
+                logCount = 0;
+                outoftimeSound.play();
                 remainingTime = 0;
                 stopGame = true;
                 gameText.setString(texts[2]);
@@ -250,14 +284,24 @@ int main()
                 if (leftDown)
                 {
                     sidePlayer = Side::LEFT;
+                    logDirection[logCount] = {1.f,-1.f};
                 }
                 else
                 {
                     sidePlayer = Side::RIGHT;
+                    logDirection[logCount] = {-1.f,-1.f};
                 }
+
+                logMoving[logCount] = true;
+                spriteLogs[logCount].setPosition(logInitPosition);
+                logVelocity[logCount] = logDirection[logCount] * logSpeed;
+                logCount++;
+
                 updateBranch(sideBranch, NUM_BRANCHES);
                 if (sideBranch[NUM_BRANCHES - 1] == sidePlayer)
-                {
+                {   
+                    logCount = 0;
+                    deathSound.play();
                     stopGame = true;
                     gameText.setString(texts[2]);
                     sf::Vector2f messageOrigin;
@@ -323,6 +367,14 @@ int main()
             default:
                 break;
             }
+            for(int i = 0 ; i<logCount; i++)
+            {
+                logVelocity[i] += gravity * deltaTime;
+
+                sf::Vector2f position = spriteLogs[i].getPosition();
+                position += logVelocity[i] * deltaTime;
+                spriteLogs[i].setPosition(position);
+            }
         }
 
         // draw area
@@ -341,11 +393,16 @@ int main()
                 window.draw(spriteBranch[i]);
             }
         }
+        for (int i = 0; i < logCount; i++)
+        {
+            window.draw(spriteLogs[i]);
+        }
         window.draw(spriteBackgroundObjects[0]);
         window.draw(spritePlayer);
         if ((isLeft || isRight) && !stopGame)
         {
             window.draw(spriteAxe);
+            chopSound.play();
         }
         if (stopGame)
         {
@@ -379,12 +436,12 @@ void spawnPos(sf::Sprite* sprites, int size, sf::Vector2f* direction, float* spe
         
         if (i < beeCount)
         {
-            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4), (rand() % 100) + 1080 * 2.0f / 4.0f);
+            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4.f), (rand() % 100) + 1080 * 2.0f / 4.0f);
             sprites[i].setScale(-1.f * dir, 1.f);
         }
         else
         {
-            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4), (rand() % 100) + 1080 * ((i-beeCount) / 8.0f));
+            sprites[i].setPosition(rand() % (1920 / 2) + (1920 / 4.f), (rand() % 100) + 1080 * ((i-beeCount) / 8.0f));
             sprites[i].setScale(-1.f * dir * (random + 0.7f), 1.f * (random + 0.7f));
         }
         speed[i] = rand() % 300 + 150.f;
