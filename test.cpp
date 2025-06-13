@@ -6,6 +6,25 @@ void blockDestroyChecking(bool [][7], sf::Vector2f, sf::RectangleShape [][7], sf
 
 int main()
 {
+    sf::Font gameFont;
+    gameFont.loadFromFile("fonts/KOMIKAP_.ttf");
+
+    sf::Text menuStartText, menuExitText;
+    menuStartText.setFont(gameFont);
+    menuStartText.setString("Game Start");
+    menuExitText.setFont(gameFont);
+    menuExitText.setString("Exit");
+
+    sf::Vector2f startMessageOrigin;
+    startMessageOrigin.x = menuStartText.getLocalBounds().width * 0.5f;
+    startMessageOrigin.y = menuStartText.getLocalBounds().height * 0.5f;
+    menuStartText.setOrigin(startMessageOrigin);
+    sf::Vector2f exitMessageOrigin;
+    exitMessageOrigin.x = menuExitText.getLocalBounds().width * 0.5f;
+    exitMessageOrigin.y = menuExitText.getLocalBounds().height * 0.5f;
+    menuExitText.setOrigin(exitMessageOrigin);
+
+
 
     sf::RenderWindow window(sf::VideoMode(1366, 768), "block destroy game!");
 
