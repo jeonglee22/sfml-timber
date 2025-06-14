@@ -33,10 +33,10 @@ int main()
     sf::Font gameFont;
     gameFont.loadFromFile(files[7]);
 
-    /*sf::SoundBuffer chopSoundBuffer, deathSoundBuffer, outoftimeSoundBuffer;
+    sf::SoundBuffer chopSoundBuffer, deathSoundBuffer, outoftimeSoundBuffer;
     chopSoundBuffer.loadFromFile(files[8]);
     deathSoundBuffer.loadFromFile(files[9]);
-    outoftimeSoundBuffer.loadFromFile(files[10]);*/
+    outoftimeSoundBuffer.loadFromFile(files[10]);
 
     sf::Sprite spriteBackground;
     spriteBackground.setTexture(backgroudTexture);
@@ -135,10 +135,10 @@ int main()
     timeBar.setFillColor(sf::Color::Red);
     timeBar.setPosition(window.getSize().x / 2.f - timeBarWidth / 2.f, window.getSize().y - 100.f);
 
-    /*sf::Sound chopSound, deathSound, outoftimeSound;
+    sf::Sound chopSound, deathSound, outoftimeSound;
     chopSound.setBuffer(chopSoundBuffer);
     deathSound.setBuffer(deathSoundBuffer);
-    outoftimeSound.setBuffer(outoftimeSoundBuffer);*/
+    outoftimeSound.setBuffer(outoftimeSoundBuffer);
 
     sf::Sprite spriteLogs[40];
     sf::Vector2f logInitPosition = spriteTree.getPosition();
@@ -146,9 +146,8 @@ int main()
     bool logMoving[40];
     sf::Vector2f logDirection[40];
     sf::Vector2f logVelocity[40];
-    float logRotation[40];
-    float logRotationDir[40];
     float logSpeed = 1000.f;
+
     for (int i =0; i<40; i++)
     {
         spriteLogs[i].setTexture(logTexture);
@@ -158,8 +157,6 @@ int main()
         logMoving[i] = false;
         logDirection[i] = { 1.f, -1.f };
         logVelocity[i] = logDirection[i] * logSpeed;
-        logRotation[i] = 0.f;
-        logRotationDir[i] = 1.f;
     }
     sf::Vector2f gravity = {0.f, 1000.f};
 
@@ -271,7 +268,7 @@ int main()
             remainingTime -= deltaTime;
             if (remainingTime <= 0.f)
             { 
-                //outoftimeSound.play();
+                outoftimeSound.play();
                 remainingTime = 0;
                 stopGame = true;
                 gameText.setString(texts[2]);
@@ -289,13 +286,11 @@ int main()
                 {
                     sidePlayer = Side::LEFT;
                     logDirection[logCount] = {1.f,-1.f};
-                    logRotationDir[logCount] = 1.f;
                 }
                 else
                 {
                     sidePlayer = Side::RIGHT;
                     logDirection[logCount] = {-1.f,-1.f};
-                    logRotationDir[logCount] = -1.f;
                 }
 
                 logMoving[logCount] = true;
@@ -306,7 +301,7 @@ int main()
                 updateBranch(sideBranch, NUM_BRANCHES);
                 if (sideBranch[NUM_BRANCHES - 1] == sidePlayer)
                 {   
-                    //deathSound.play();
+                    deathSound.play();
                     stopGame = true;
                     gameText.setString(texts[2]);
                     sf::Vector2f messageOrigin;
@@ -375,12 +370,10 @@ int main()
             for(int i = 0 ; i<logCount; i++)
             {
                 logVelocity[i] += gravity * deltaTime;
-                logRotation[i] += 1.f * logRotationDir[i];
 
                 sf::Vector2f position = spriteLogs[i].getPosition();
                 position += logVelocity[i] * deltaTime;
                 spriteLogs[i].setPosition(position);
-                spriteLogs[i].setRotation(logRotation[i]);
 
                 if (spriteLogs[i].getPosition().y >= window.getSize().y + logTexture.getSize().y)
                 {
@@ -391,7 +384,6 @@ int main()
                         logMoving[j] = logMoving[j+1];
                         logDirection[j] = logDirection[j+1];
                         logVelocity[j] = logVelocity[j+1];
-                        logRotation[j] = logRotation[j + 1];
                     }
                     i--;
                 }
@@ -423,7 +415,7 @@ int main()
         if ((isLeft || isRight) && !stopGame)
         {
             window.draw(spriteAxe);
-            //chopSound.play();
+            chopSound.play();
         }
         if (stopGame)
         {
